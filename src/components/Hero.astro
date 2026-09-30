@@ -1,0 +1,46 @@
+---
+import SignupForm from "./SignupForm.astro";
+import type { SiteCopy } from "../lib/content";
+
+interface Props {
+	copy: SiteCopy;
+}
+
+const { copy } = Astro.props;
+---
+
+<div class="row text-center pb-5 pt-md-5 position-relative">
+	<div class="col-lg-10 offset-lg-1">
+		<h1>
+			<span class="text-primary">{copy.accentWord}</span><br />
+			{copy.heroHeadline}
+		</h1>
+		<div class="row">
+			<div class="col-lg-8 offset-lg-2">
+				<div class="mb-2">{copy.heroIntro}</div>
+				<div class="position-relative">
+					<SignupForm
+						layout="inline"
+						placeholder={copy.emailPlaceholder}
+						button={copy.submitLabel}
+						thanks={copy.thanksMessage}
+					/>
+					<img
+						class="position-absolute d-none d-lg-block hero-arrow"
+						src="/images/arrow-down.svg"
+						width="120"
+						height="90"
+						alt=""
+					/>
+				</div>
+				<SignupForm
+					layout="stacked"
+					placeholder={copy.emailPlaceholder}
+					button={copy.submitLabel}
+					thanks={copy.thanksMessage}
+				/>
+				<div><b>{copy.heroTagline}</b></div>
+			</div>
+		</div>
+	</div>
+</div>

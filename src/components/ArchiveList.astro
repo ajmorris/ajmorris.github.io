@@ -1,0 +1,68 @@
+---
+import { formatMonth } from "../lib/content";
+
+interface PostItem {
+	id: string;
+	title: string;
+	date: unknown;
+	isPodcast: boolean;
+}
+
+interface Props {
+	posts: PostItem[];
+	page: number;
+	hasMore: boolean;
+}
+
+const { posts, page, hasMore } = Astro.props;
+
+const groups: { label: string; posts: PostItem[] }[] = [];
+for (const post of posts) {
+	const label = formatMonth(post.date) || "Lorem";
+	const current = groups[groups.length - 1];
+	if (!current || current.label !== label) {
+		groups.push({ label, posts: [post] });
+	} else {
+		current.posts.push(post);
+	}
+}
+
+const newerHref = page <= 2 ? "/blog/" : `/blog/page/${page - 1}/`;
+---
+
+<dl class="row">
+	{
+		groups.map((group) => (
+			<>
+				<dt class="col-sm-3">{group.label}</dt>
+				<dd class="col-sm-9">
+					<ul class="list-unstyled">
+						{group.posts.map((post) => (
+							<li class="mb-1">
+								<a href={`/${post.id}/`}>{post.title}</a>
+								{post.isPodcast && (
+									<img
+										src="/images/podcast.svg"
+										alt="Podcast"
+										title="Podcast"
+										width="15"
+										height="15"
+										class="ms-1"
+									/>
+								)}
+							</li>
+						))}
+					</ul>
+				</dd>
+			</>
+		))
+	}
+</dl>
+<div class="row">
+	<div class="col-6">
+		{page > 1 && <a href={newerHref}>← Newer posts</a>}
+	</div>
+	<div class="col-6 text-end">
+		{hasMore && <a href={`/blog/page/${page + 1}/`}>Older posts →</a>}
+	</div>
+</div>

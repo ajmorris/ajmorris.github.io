@@ -1,0 +1,47 @@
+---
+import { getEmDashCollection } from "emdash";
+import Base from "../../../layouts/Base.astro";
+import ArchiveList from "../../../components/ArchiveList.astro";
+import { loadSiteCopy, postDate } from "../../../lib/content";
+
+const PER_PAGE = 10;
+const page = Number(Astro.params.page);
+
+if (!Number.isInteger(page) || page < 2) {
+	return Astro.rewrite("/404");
+}
+
+const [{ entries, hasMore, cacheHint }, copyResult] = await Promise.all([
+	getEmDashCollection("posts", {
+		orderBy: { display_date: "desc" },
+		limit: PER_PAGE,
+		offset: (page - 1) * PER_PAGE,
+	}),
+	loadSiteCopy(),
+]);
+
+if (Astro.cache?.enabled) {
+	Astro.cache.set(cacheHint);
+	if (copyResult.cacheHint) Astro.cache.set(copyResult.cacheHint);
+}
+
+if (entries.length === 0) {
+	return Astro.rewrite("/404");
+}
+
+const copy = copyResult.copy;
+const posts = entries.map((post) => ({
+	id: post.id,
+	title: String(post.data.title ?? "Lorem ipsum"),
+	date: postDate(post.data),
+	isPodcast: Boolean((post.data as { is_podcast?: boolean }).is_podcast),
+}));
+---
+
+<Base title={copy.archiveTitle} description={copy.archiveIntro}>
+	<h1>{copy.archiveTitle}</h1>
+	<div class="row">
+		<div class="col-lg-8 mb-5">{copy.archiveIntro}</div>
+	</div>
+	<ArchiveList posts={posts} page={page} hasMore={Boolean(hasMore)} />
+</Base>

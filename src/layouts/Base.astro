@@ -1,0 +1,149 @@
+---
+import { getMenuWithCacheHint, getSiteSettingsWithCacheHint } from "emdash";
+import { EmDashHead, EmDashBodyStart, EmDashBodyEnd } from "emdash/ui";
+import { createPublicPageContext } from "emdash/page";
+import { Font } from "astro:assets";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "../styles/site.css";
+import NewsletterBand from "../components/NewsletterBand.astro";
+import Popup from "../components/Popup.astro";
+import { isCurrentPath, loadSiteCopy } from "../lib/content";
+
+interface Props {
+	title: string;
+	description?: string | null;
+	showBand?: boolean;
+	showPopup?: boolean;
+	content?: { collection: string; id: string; slug?: string | null };
+}
+
+const {
+	title,
+	description,
+	showBand = true,
+	showPopup = true,
+	content,
+} = Astro.props;
+
+const [settingsResult, menuResult, copyResult] = await Promise.all([
+	getSiteSettingsWithCacheHint(),
+	getMenuWithCacheHint("primary"),
+	loadSiteCopy(),
+]);
+
+if (Astro.cache?.enabled) {
+	Astro.cache.set(settingsResult.cacheHint);
+	Astro.cache.set(menuResult.cacheHint);
+	if (copyResult.cacheHint) Astro.cache.set(copyResult.cacheHint);
+}
+
+const siteTitle = settingsResult.data?.title || "Lorem Ipsum";
+const siteTagline = settingsResult.data?.tagline || copyResult.copy.heroTagline;
+const fullTitle = title === siteTitle || title.includes(siteTitle) ? title : `${title} — ${siteTitle}`;
+const menu = menuResult.data;
+const copy = copyResult.copy;
+const pathname = Astro.url.pathname;
+
+const pageCtx = createPublicPageContext({
+	Astro,
+	kind: content ? "content" : "custom",
+	pageType: content?.collection === "posts" ? "article" : "website",
+	title: fullTitle,
+	pageTitle: title,
+	description: description ?? siteTagline,
+	content,
+	siteName: siteTitle,
+});
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<Font cssVariable="--font-body" preload />
+		<title>{fullTitle}</title>
+		<meta name="description" content={description ?? siteTagline} />
+		<EmDashHead page={pageCtx} />
+	</head>
+	<body>
+		<EmDashBodyStart page={pageCtx} />
+		<nav class="navbar navbar-expand-lg bg-light">
+			<div class="container">
+				<a class="navbar-brand border-0 d-flex align-items-center" href="/">
+					<img src="/images/avatar.svg" class="me-1 brand-mark" alt="" width="67" height="67" />
+					<div class="lh-sm">
+						by<br />
+						<b>{siteTitle.toUpperCase()}</b>
+					</div>
+				</a>
+				<button
+					class="navbar-toggler fw-bold bg-light border-0"
+					type="button"
+					data-nav-toggle
+					aria-controls="navbarNav"
+					aria-expanded="false"
+					aria-label="Menu"
+				>
+					<span class="navbar-toggler-icon"></span>
+					Menu
+				</button>
+				<div class="collapse navbar-collapse" id="navbarNav">
+					<ul class="navbar-nav ms-auto">
+						{
+							menu?.items.map((item) => (
+								<li
+									class:list={[
+										"nav-item px-1 text-uppercase",
+										isCurrentPath(item.url, pathname) && "current-menu-item",
+									]}
+								>
+									<a
+										href={item.url}
+										class="nav-link"
+										target={item.target}
+										rel={item.target === "_blank" ? "noopener noreferrer" : undefined}
+									>
+										{item.label}
+									</a>
+								</li>
+							))
+						}
+					</ul>
+					<a class="btn btn-danger rounded-1 ms-1 book-button" href={copy.bookUrl}>{copy.bookLabel}</a>
+				</div>
+			</div>
+		</nav>
+
+		<div class="container mt-2">
+			<slot />
+			{showBand && <NewsletterBand copy={copy} />}
+			<footer class:list={["border-top py-4", !showBand && "mt-5"]}>
+				<div class="row">
+					<div class="col text-center">
+						<div class="mb-2">
+							<img src="/images/badge.svg" width="120" height="120" alt="" />
+						</div>
+						<div class="lead">{copy.footerLine}</div>
+						<div>
+							<small>
+								<a class="border-0 text-decoration-underline" href="/privacy-policy/">{copy.privacyLabel}</a>
+							</small>
+						</div>
+					</div>
+				</div>
+			</footer>
+		</div>
+		{showPopup && <Popup copy={copy} />}
+		<EmDashBodyEnd page={pageCtx} />
+		<script>
+			const toggle = document.querySelector<HTMLButtonElement>("[data-nav-toggle]");
+			const menu = document.querySelector("#navbarNav");
+			toggle?.addEventListener("click", () => {
+				const open = menu?.classList.toggle("show") ?? false;
+				toggle.setAttribute("aria-expanded", String(open));
+			});
+		</script>
+	</body>
+</html>

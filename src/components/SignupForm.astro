@@ -1,0 +1,75 @@
+---
+interface Props {
+	layout: "inline" | "stacked" | "popup" | "band";
+	placeholder: string;
+	button: string;
+	thanks: string;
+}
+
+const { layout, placeholder, button, thanks } = Astro.props;
+const inline = layout === "inline";
+---
+
+<form class:list={["signup-form", inline && "d-none d-md-block mb-1 position-relative", layout === "stacked" && "d-md-none mb-1", layout === "band" && "mb-1"]} data-signup novalidate>
+	<div data-signup-fields>
+		{
+			inline ? (
+				<div class="input-group input-group-lg mb-1">
+					<span class="input-group-text d-none d-md-block">
+						<img src="/images/mark.svg" alt="" width="28" height="28" />
+					</span>
+					<input
+						type="email"
+						name="email"
+						class="form-control"
+						placeholder={placeholder}
+						aria-label={placeholder}
+						required
+					/>
+					<button class="btn btn-primary px-2" type="submit">
+						{button}
+					</button>
+				</div>
+			) : layout === "stacked" || layout === "band" ? (
+				<>
+					<input
+						placeholder={placeholder}
+						type="email"
+						name="email"
+						class="form-control form-control-lg text-center"
+						style="margin-bottom: .2rem"
+						aria-label={placeholder}
+						required
+					/>
+					<button class="btn btn-lg btn-primary w-100" type="submit">
+						{button}
+					</button>
+				</>
+			) : (
+				<>
+					<input type="email" name="email" placeholder={placeholder} aria-label={placeholder} required />
+					<button type="submit">{button}</button>
+				</>
+			)
+		}
+	</div>
+	<p class="signup-thanks" data-signup-thanks hidden>{thanks}</p>
+</form>
+
+<script>
+	document.querySelectorAll<HTMLFormElement>("[data-signup]").forEach((form) => {
+		if (form.dataset.bound === "true") return;
+		form.dataset.bound = "true";
+		form.addEventListener("submit", (event) => {
+			event.preventDefault();
+			const input = form.querySelector<HTMLInputElement>("input[type=email]");
+			if (!input || !input.checkValidity()) {
+				input?.reportValidity();
+				return;
+			}
+			form.querySelector("[data-signup-fields]")?.setAttribute("hidden", "");
+			form.querySelector("[data-signup-thanks]")?.removeAttribute("hidden");
+			sessionStorage.setItem("signup-popup-closed", "1");
+		});
+	});
+</script>
