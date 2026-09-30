@@ -1,0 +1,21 @@
+---
+import SignupForm from "./SignupForm.astro";
+import type { SiteCopy } from "../lib/content";
+
+interface Props {
+	copy: SiteCopy;
+}
+
+const { copy } = Astro.props;
+---
+
+<div class="inline-cta">
+	<p><strong>{copy.inlineTitle}</strong></p>
+	<p>{copy.inlineBody}</p>
+	<SignupForm
+		layout="popup"
+		placeholder={copy.emailPlaceholder}
+		button={copy.inlineButton}
+		thanks={copy.thanksMessage}
+	/>
+</div>

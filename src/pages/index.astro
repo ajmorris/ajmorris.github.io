@@ -1,0 +1,81 @@
+---
+import { getEmDashCollection, getSiteSettings } from "emdash";
+import { PortableText } from "emdash/ui";
+import Base from "../layouts/Base.astro";
+import Hero from "../components/Hero.astro";
+import { loadSiteCopy } from "../lib/content";
+
+const [startHere, mostRead, settings, copyResult] = await Promise.all([
+	getEmDashCollection("posts", {
+		where: { home_list: "start-here" },
+		orderBy: { display_date: "asc" },
+		limit: 8,
+	}),
+	getEmDashCollection("posts", {
+		where: { home_list: "most-read" },
+		orderBy: { display_date: "desc" },
+		limit: 8,
+	}),
+	getSiteSettings(),
+	loadSiteCopy(),
+]);
+
+if (Astro.cache?.enabled) {
+	Astro.cache.set(startHere.cacheHint);
+	Astro.cache.set(mostRead.cacheHint);
+	if (copyResult.cacheHint) Astro.cache.set(copyResult.cacheHint);
+}
+
+const copy = copyResult.copy;
+const siteTitle = settings?.title || "Lorem Ipsum";
+---
+
+<Base title={siteTitle} description={settings?.tagline}>
+	<Hero copy={copy} />
+	<div class="row">
+		<div class="col-lg-6 py-3 p-sm-5 bg-light shadow-sm border">
+			<div class="home-intro">
+				{
+					copy.homeIntro.length > 0 ? (
+						<PortableText value={copy.homeIntro} />
+					) : (
+						<p class="lead mb-3">{copy.heroIntro}</p>
+					)
+				}
+			</div>
+			<div class="book-box">
+				<a href={copy.bookUrl} class="border-0 flex-shrink-0">
+					<img src="/images/book.svg" alt="" width="72" height="100" />
+				</a>
+				<div>
+					<p class="mb-1 fw-bold">{copy.bookBoxTitle}</p>
+					<p class="mb-0">
+						<a href={copy.bookUrl} class="fw-bold">{copy.bookBoxLink}</a>
+					</p>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg-6 py-3 p-sm-5 shadow-sm border">
+			<div class="mb-1"><b>{copy.startHeading}</b></div>
+			<ol class="mb-3" style="padding-left:1.2em">
+				{
+					startHere.entries.map((post) => (
+						<li class="mb-1">
+							<a href={`/${post.id}/`}>{post.data.title}</a>
+						</li>
+					))
+				}
+			</ol>
+			<div class="mb-1"><b>{copy.mostReadHeading}</b></div>
+			<ul class="list-unstyled">
+				{
+					mostRead.entries.map((post) => (
+						<li class="mb-1">
+							<a href={`/${post.id}/`}>{post.data.title}</a>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</div>
+</Base>

@@ -1,0 +1,46 @@
+---
+import SignupForm from "./SignupForm.astro";
+import type { SiteCopy } from "../lib/content";
+
+interface Props {
+	copy: SiteCopy;
+}
+
+const { copy } = Astro.props;
+---
+
+<div class="row py-5 mt-5 border-top">
+	<div class="col-lg-6">
+		<h2>
+			<span class="text-primary">{copy.accentWord}</span><br />
+			{copy.heroHeadline}
+		</h2>
+		<div class="col-10 mb-1 mb-lg-0">{copy.bandIntro}</div>
+	</div>
+	<div class="col-1 position-relative">
+		<img
+			class="position-absolute d-none d-lg-block band-arrow"
+			src="/images/arrow-right.svg"
+			width="140"
+			height="50"
+			alt=""
+		/>
+	</div>
+	<div class="col-lg-4 position-relative">
+		<SignupForm
+			layout="band"
+			placeholder={copy.emailPlaceholder}
+			button={copy.submitLabel}
+			thanks={copy.thanksMessage}
+		/>
+		<img
+			class="position-absolute d-block d-lg-none mobile-arrow"
+			src="/images/arrow-down.svg"
+			width="90"
+			height="68"
+			alt=""
+		/>
+		<div class="text-center">{copy.bandTagline}</div>
+	</div>
+	<div class="col-lg-1"></div>
+</div>

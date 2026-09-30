@@ -1,0 +1,155 @@
+---
+import { decodeSlug, getEmDashEntry, getSeoMeta, getSiteSettings } from "emdash";
+import { Image, PortableText } from "emdash/ui";
+import Base from "../layouts/Base.astro";
+import Hero from "../components/Hero.astro";
+import InlineCta from "../components/InlineCta.astro";
+import SocialLinks from "../components/SocialLinks.astro";
+import { formatLongDate, loadSiteCopy, postDate } from "../lib/content";
+
+const slug = decodeSlug(Astro.params.slug);
+if (!slug || slug === "blog") {
+	return Astro.rewrite("/404");
+}
+
+const [pageResult, copyResult, settings] = await Promise.all([
+	getEmDashEntry("pages", slug),
+	loadSiteCopy(),
+	getSiteSettings(),
+]);
+
+const page = pageResult.entry;
+let post = null;
+let postHint = pageResult.cacheHint;
+
+if (!page) {
+	const postResult = await getEmDashEntry("posts", slug);
+	post = postResult.entry;
+	postHint = postResult.cacheHint;
+}
+
+if (Astro.cache?.enabled) {
+	if (postHint) Astro.cache.set(postHint);
+	if (copyResult.cacheHint) Astro.cache.set(copyResult.cacheHint);
+}
+
+if (!page && !post) {
+	return Astro.rewrite("/404");
+}
+
+const copy = copyResult.copy;
+const siteTitle = settings?.title || "Lorem Ipsum";
+const entry = page ?? post;
+const template = page ? String(page.data.template ?? "default") : "post";
+const seo = getSeoMeta(entry!, {
+	siteTitle,
+	siteUrl: Astro.url.origin,
+	path: Astro.url.pathname.replace(/\/$/, ""),
+});
+const published = post ? formatLongDate(postDate(post.data)) : "";
+const excerpt = post && typeof post.data.excerpt === "string" ? post.data.excerpt : "";
+const intro = page?.data.intro;
+const card = page?.data.card;
+const portrait = page?.data.portrait;
+const postscript = page?.data.postscript;
+const contentRef = {
+	collection: page ? "pages" : "posts",
+	id: entry!.data.id,
+	slug,
+};
+---
+
+{
+	template === "newsletter" && page ? (
+		<Base title={page.data.title || copy.heroHeadline} description={copy.heroIntro} showBand={false} showPopup={false} content={contentRef}>
+			<Hero copy={copy} />
+		</Base>
+	) : template === "about" && page ? (
+		<Base title={seo.title} description={seo.description} content={contentRef}>
+			<div class="row mb-1">
+				<div class="col-lg-6 pt-3">
+					<h1 {...page.edit.title}>{page.data.title}</h1>
+					<div class="lead">
+						{Array.isArray(intro) && (
+							<div {...page.edit.intro}>
+								<PortableText value={intro} />
+							</div>
+						)}
+						<SocialLinks />
+					</div>
+				</div>
+				<div class="col-lg-6 text-center">
+					{portrait ? (
+						<div {...page.edit.portrait}>
+							<Image image={portrait} alt={page.data.title} class="img-fluid portrait" />
+						</div>
+					) : (
+						<img src="/images/portrait.svg" alt="" class="img-fluid portrait" width="420" height="426" />
+					)}
+				</div>
+			</div>
+			<div class="row py-4 mt-4 border-top">
+				<div class="col-lg-8 offset-lg-2 page-prose" {...page.edit.content}>
+					<PortableText value={page.data.content} />
+				</div>
+			</div>
+			{Array.isArray(card) && card.length > 0 && (
+				<div class="row mb-3 mt-4">
+					<div class="col-lg-8 offset-lg-2 py-3 p-sm-5 shadow-sm border" {...page.edit.card}>
+						<PortableText value={card} />
+					</div>
+				</div>
+			)}
+			{typeof postscript === "string" && postscript && (
+				<p class="mt-4 mb-0" {...page.edit.postscript}>
+					{postscript}
+				</p>
+			)}
+		</Base>
+	) : page ? (
+		<Base title={seo.title} description={seo.description} content={contentRef}>
+			<article>
+				<h1 class="entry-title text-center" {...page.edit.title}>
+					{page.data.title}
+				</h1>
+				<div class="row">
+					<div class="col-lg-8 offset-lg-2 page-prose" {...page.edit.content}>
+						<PortableText value={page.data.content} />
+					</div>
+				</div>
+			</article>
+		</Base>
+	) : (
+		post && (
+			<Base title={seo.title} description={seo.description} content={contentRef}>
+				<article>
+					<div class="text-center mb-2">
+						{published && <time class="text-secondary">{published}</time>}
+						{published && <span style="padding: 0 .5rem">•</span>}
+						<a href="/email-newsletter/" class="border-0 text-primary">
+							{copy.newsletterByline}
+						</a>
+					</div>
+					<h1 class="entry-title text-center" {...post.edit.title}>
+						{post.data.title}
+					</h1>
+					<div class="row">
+						<div class="col-lg-8 offset-lg-2 entry-content">
+							{excerpt && (
+								<div class="callout">
+									<p>
+										<strong>{copy.calloutLabel}</strong> {excerpt}
+									</p>
+								</div>
+							)}
+							<InlineCta copy={copy} />
+							<div {...post.edit.content}>
+								<PortableText value={post.data.content} />
+							</div>
+						</div>
+					</div>
+				</article>
+			</Base>
+		)
+	)
+}

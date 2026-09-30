@@ -1,0 +1,45 @@
+---
+import SignupForm from "./SignupForm.astro";
+import type { SiteCopy } from "../lib/content";
+
+interface Props {
+	copy: SiteCopy;
+}
+
+const { copy } = Astro.props;
+---
+
+<div class="signup-popup" data-popup hidden>
+	<div class="signup-popup__dialog" role="dialog" aria-modal="true" aria-label={copy.popupTitle}>
+		<button type="button" class="signup-popup__close" data-popup-close aria-label="Close">&times;</button>
+		<p class="signup-popup__title">{copy.popupTitle}</p>
+		<p class="signup-popup__body">{copy.popupBody}</p>
+		<SignupForm
+			layout="popup"
+			placeholder={copy.emailPlaceholder}
+			button={copy.popupButton}
+			thanks={copy.thanksMessage}
+		/>
+	</div>
+</div>
+
+<script>
+	const popup = document.querySelector<HTMLElement>("[data-popup]");
+	if (popup && sessionStorage.getItem("signup-popup-closed") !== "1") {
+		window.setTimeout(() => {
+			if (sessionStorage.getItem("signup-popup-closed") === "1") return;
+			popup.hidden = false;
+		}, 2500);
+	}
+
+	const close = () => {
+		if (!popup) return;
+		popup.hidden = true;
+		sessionStorage.setItem("signup-popup-closed", "1");
+	};
+
+	popup?.querySelector("[data-popup-close]")?.addEventListener("click", close);
+	popup?.addEventListener("click", (event) => {
+		if (event.target === popup) close();
+	});
+</script>
