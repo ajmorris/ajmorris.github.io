@@ -12,7 +12,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "start": "node ./dist/server/entry.mjs",
-    "typecheck": "astro check"
+    "typecheck": "astro check",
+    "export:html": "node scripts/export-html.mjs"
   },
   "dependencies": {
     "@astrojs/node": "^11.1.5",

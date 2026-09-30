@@ -19,6 +19,10 @@ Open the site at `http://localhost:4321/`. The first time, finish setup at `http
 
 Edit copy under **Site copy**, **Pages**, and **Posts**. Homepage lists use the post field **Homepage list** (`start-here` or `most-read`).
 
+## HTML templates
+
+`npm run export:html` writes standalone HTML files to `wordpress-html/`. Each page keeps Bootstrap and the theme CSS in a `<style>` block in the document, with images in `wordpress-html/images/`. The same folder is zipped at `public/blue-layout-templates.zip` for download from `/blue-layout-templates.zip`. The dev server needs to be running first.
+
 ## Pages
 
 - `/` home
